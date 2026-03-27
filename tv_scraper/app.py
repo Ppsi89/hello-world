@@ -8,6 +8,7 @@ Run with:
 
 import json
 import logging
+import os
 
 from flask import Flask, jsonify, render_template_string
 
@@ -138,4 +139,5 @@ def api_search():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", port=5000, debug=debug)
