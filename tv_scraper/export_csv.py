@@ -166,7 +166,7 @@ def listings_to_csv(listings: Iterable[Listing], path: str) -> None:
                 "location": getattr(item, "location", "") or "",
                 "date": getattr(item, "date_text", "") or "",
                 "url": getattr(item, "url", "") or "",
-                "image_urls": _normalize_image_urls(getattr(item, "image_urls", "")),
+                "image_urls": _normalize_image_urls(getattr(item, "images", [])),
                 "condition": getattr(item, "condition", "") or "",
             }
             writer.writerow(row)
