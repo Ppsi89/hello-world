@@ -2,7 +2,8 @@
 AI Evaluation module – scores listings using the OpenAI API.
 
 Each listing is evaluated on brand reputation, features, condition,
-estimated year of manufacture, and price vs. market value.
+estimated year of manufacture, and the ratio of current price to the
+TV's original release price (lower ratio = better deal).
 A composite score (0–100) is produced.
 
 When no OpenAI API key is configured the module falls back to a
@@ -27,11 +28,20 @@ class ScoredListing:
     summary: str = ""
     features: list[str] = None  # type: ignore[assignment]
     brand: str = ""
+    model: str = ""
     year: Optional[int] = None
+    release_price_cents: Optional[int] = None
 
     def __post_init__(self) -> None:
         if self.features is None:
             self.features = []
+
+    @property
+    def price_ratio(self) -> Optional[float]:
+        """Ratio of current price to release price (None if either is unknown)."""
+        if self.listing.price_cents and self.release_price_cents:
+            return self.listing.price_cents / self.release_price_cents
+        return None
 
 
 # ── OpenAI-backed scorer ──────────────────────────────────────────────────────
@@ -42,14 +52,17 @@ return a JSON object with EXACTLY these fields:
   "score": <int 0-100>,
   "summary": "<one-sentence why this is a good or bad deal>",
   "brand": "<brand name or 'Unknown'>",
+  "model": "<TV model name or 'Unknown'>",
   "year": <estimated manufacturing year as int or null>,
+  "price_on_release": <estimated original retail price in EUR as int or null>,
   "features": ["4K", "OLED", ...]
 }
 Scoring guidelines (total 100):
   • Brand reputation (Samsung/LG/Sony = high, no-name = low): 0-25
   • Features (4K/OLED/QLED/HDR/HDMI2.1/Smart TV): 0-25
   • Condition (based on description): 0-20
-  • Price vs estimated market value (lower = better): 0-30
+  • Price ratio (current price / estimated price at release – lower = better deal): 0-30
+      ratio < 0.20 → 30 pts | < 0.35 → 22 pts | < 0.50 → 15 pts | < 0.65 → 8 pts | else → 3 pts
 Return ONLY valid JSON, no markdown fences.
 """
 
@@ -86,14 +99,18 @@ def _score_with_openai(listings: list[Listing]) -> list[ScoredListing]:
             )
             raw = resp.choices[0].message.content or "{}"
             data = json.loads(raw)
+            price_on_release = data.get("price_on_release")
+            release_price_cents = int(price_on_release * 100) if price_on_release else None
             results.append(
                 ScoredListing(
                     listing=listing,
                     score=float(data.get("score", 0)),
                     summary=data.get("summary", ""),
                     brand=data.get("brand", ""),
+                    model=data.get("model", ""),
                     year=data.get("year"),
                     features=data.get("features", []),
+                    release_price_cents=release_price_cents,
                 )
             )
         except Exception as exc:
