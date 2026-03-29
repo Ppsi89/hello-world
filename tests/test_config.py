@@ -9,7 +9,7 @@ class TestBuildSearchUrl:
     def test_page_1(self):
         url = build_search_url(1)
         assert "13599" in url
-        assert "preis:200:350" in url
+        assert "preis:100:350" in url
         assert "seite:" not in url
 
     def test_page_2(self):

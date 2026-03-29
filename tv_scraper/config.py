@@ -8,7 +8,7 @@ import os
 # ── Search Parameters ──────────────────────────────────────────────────────────
 POSTAL_CODE = "13599"
 RADIUS_KM = 30
-PRICE_MIN = 200
+PRICE_MIN = 100
 PRICE_MAX = 350
 CONDITION = "like_new"          # maps to "Sehr gut" on the site
 CATEGORY_PATH = "s-tv-video/fernseher"
