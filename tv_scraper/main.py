@@ -10,6 +10,7 @@ from tv_scraper.ai_evaluator import ScoredListing, evaluate, top_results
 from tv_scraper.cache import cache_timestamp, is_cache_fresh, load_cache, save_cache
 from tv_scraper.filters import filter_listings
 from tv_scraper.scraper import scrape_listings
+from tv_scraper.export_csv import listings_to_csv
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,6 +43,8 @@ def run() -> list[dict]:
     else:
         raw = scrape_listings()
         save_cache(raw)
+    
+    listings_to_csv(listings, "out.csv")
 
     logger.info("=== Step 2: Filtering listings ===")
     filtered = filter_listings(raw)
