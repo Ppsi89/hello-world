@@ -8,3 +8,4 @@ venv/
 dist/
 build/
 .pytest_cache/
+tv_listings_cache.csv

@@ -7,6 +7,7 @@ import logging
 import sys
 
 from tv_scraper.ai_evaluator import ScoredListing, evaluate, top_results
+from tv_scraper.cache import cache_timestamp, is_cache_fresh, load_cache, save_cache
 from tv_scraper.filters import filter_listings
 from tv_scraper.scraper import scrape_listings
 
@@ -35,7 +36,12 @@ def _to_dict(sl: ScoredListing) -> dict:
 def run() -> list[dict]:
     """Execute the full pipeline and return results as dicts."""
     logger.info("=== Step 1: Scraping listings ===")
-    raw = scrape_listings()
+    if is_cache_fresh():
+        raw = load_cache()
+        logger.info("Loaded %d listings from cache.", len(raw))
+    else:
+        raw = scrape_listings()
+        save_cache(raw)
 
     logger.info("=== Step 2: Filtering listings ===")
     filtered = filter_listings(raw)

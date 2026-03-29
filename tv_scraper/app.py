@@ -12,6 +12,7 @@ import logging
 from flask import Flask, jsonify, render_template_string
 
 from tv_scraper.ai_evaluator import evaluate, top_results
+from tv_scraper.cache import cache_timestamp, is_cache_fresh, load_cache, save_cache
 from tv_scraper.filters import filter_listings
 from tv_scraper.scraper import scrape_listings
 
@@ -88,6 +89,11 @@ _HTML = """\
               <p style="margin-top:6px"><a href="${esc(r.url)}" target="_blank">Open listing ↗</a></p>
             </div>`;
         });
+        if (data.cached) {
+          resultsDiv.innerHTML += `<p style="text-align:center;font-size:.8rem;color:#888;margin-top:8px">
+            ⚡ Results from cache (scraped at ${esc(data.cached_at)}).
+            Data is re-fetched automatically after 1 hour.</p>`;
+        }
       } catch (e) { errDiv.textContent = 'Request failed: ' + e; }
       finally { btn.disabled = false; spinner.style.display = 'none'; }
     }
@@ -110,10 +116,15 @@ def index():
 @app.route("/api/search")
 def api_search():
     try:
-        raw = scrape_listings()
+        cached = is_cache_fresh()
+        if cached:
+            raw = load_cache()
+        else:
+            raw = scrape_listings()
+            save_cache(raw)
         filtered = filter_listings(raw)
         if not filtered:
-            return jsonify({"results": [], "total_raw": len(raw)})
+            return jsonify({"results": [], "total_raw": len(raw), "cached": cached, "cached_at": cache_timestamp()})
         scored = evaluate(filtered)
         best = top_results(scored)
         results = [
@@ -131,7 +142,13 @@ def api_search():
             }
             for s in best
         ]
-        return jsonify({"results": results, "total_raw": len(raw), "total_filtered": len(filtered)})
+        return jsonify({
+            "results": results,
+            "total_raw": len(raw),
+            "total_filtered": len(filtered),
+            "cached": cached,
+            "cached_at": cache_timestamp(),
+        })
     except Exception as exc:
         logging.exception("Search failed")
         return jsonify({"error": str(exc)}), 500

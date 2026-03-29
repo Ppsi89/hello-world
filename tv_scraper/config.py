@@ -43,6 +43,10 @@ USER_AGENT = (
 # ── Output ─────────────────────────────────────────────────────────────────────
 TOP_N = 3                     # number of best results to return
 
+# ── Cache ──────────────────────────────────────────────────────────────────────
+CACHE_FILE = os.environ.get("TV_CACHE_FILE", "tv_listings_cache.csv")
+CACHE_TTL_SECONDS = int(os.environ.get("TV_CACHE_TTL", "3600"))  # 1 hour
+
 
 def build_search_url(page: int = 1) -> str:
     """Build the search URL for a given page number."""
