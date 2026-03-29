@@ -54,6 +54,7 @@ def main() -> None:
     for i, listing in enumerate(filtered, 1):
         print(f"\n  #{i}  {listing.title}")
         print(f"      Price : {listing.price}")
+        print(f"      Desc  : {listing.description or '–'}")
         print(f"      Location: {listing.location}")
         print(f"      Date  : {listing.date_text}")
         print(f"      Link  : {listing.url}")

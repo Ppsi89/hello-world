@@ -84,6 +84,7 @@ _HTML = """\
               <h2>#${i+1} ${esc(r.title)}</h2>
               <p class="meta">💰 ${esc(r.price)}</p>
               <p class="meta">📍 ${esc(r.location)} &nbsp; 📅 ${esc(r.date)}</p>
+              ${r.description ? `<p style="margin-top:6px;font-size:.9rem">${esc(r.description)}</p>` : ''}
               <p style="margin-top:6px"><a href="${esc(r.url)}" target="_blank">Open listing ↗</a></p>
             </div>`;
         });
@@ -130,6 +131,7 @@ def api_search():
             {
                 "title": l.title,
                 "price": l.price,
+                "description": l.description,
                 "location": l.location,
                 "date": l.date_text,
                 "url": l.url,
