@@ -26,10 +26,6 @@ TV_SIZE_MIN = 55   # inches
 TV_SIZE_MAX = 65   # inches
 MAX_LISTING_AGE_DAYS = 14
 
-# ── AI Evaluation ─────────────────────────────────────────────────────────────
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-OPENAI_MODEL = "gpt-4o-mini"
-
 # ── Scraper Settings ──────────────────────────────────────────────────────────
 REQUEST_TIMEOUT = 15          # seconds
 REQUEST_DELAY = (1.5, 3.0)    # random delay range between requests
@@ -39,9 +35,6 @@ USER_AGENT = (
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/124.0.0.0 Safari/537.36"
 )
-
-# ── Output ─────────────────────────────────────────────────────────────────────
-TOP_N = 3                     # number of best results to return
 
 # ── Cache ──────────────────────────────────────────────────────────────────────
 CACHE_FILE = os.environ.get("TV_CACHE_FILE", "tv_listings_cache.csv")
