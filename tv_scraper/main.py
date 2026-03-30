@@ -5,6 +5,7 @@ Main entry-point – orchestrates scraping → filtering → CSV export.
 import logging
 
 from tv_scraper.cache import is_cache_fresh, load_cache, save_cache
+from tv_scraper.config import CSV_OUTPUT
 from tv_scraper.export_csv import listings_to_csv
 from tv_scraper.filters import filter_listings
 from tv_scraper.scraper import Listing, scrape_listings
@@ -15,8 +16,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-CSV_OUTPUT = "tv_listings.csv"
 
 
 def run() -> list[Listing]:
