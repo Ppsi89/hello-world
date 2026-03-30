@@ -52,6 +52,26 @@ def _session() -> requests.Session:
     return s
 
 
+def _fetch_full_description(session: requests.Session, url: str) -> str:
+    """Wchodzi w konkretne ogłoszenie i pobiera 100% opisu."""
+    try:
+        # Dodajemy mały losowy delay, żeby nie zablokowali IP za zbyt szybkie wejścia
+        time.sleep(random.uniform(1.0, 2.5)) 
+        
+        resp = session.get(url, timeout=REQUEST_TIMEOUT)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        
+        # Na kleinanzeigen.de pełny opis jest w elemencie o id "viewad-description-text"
+        full_desc_el = soup.select_one("#viewad-description-text")
+        if full_desc_el:
+            # get_text(separator="\n") zachowa przejrzystość (entery)
+            return full_desc_el.get_text(separator="\n", strip=True)
+    except Exception as e:
+        logger.warning("Nie udało się pobrać pełnego opisu z %s: %s", url, e)
+    
+    return "" # Jeśli się nie uda, zwraca pusty string
+
 def _parse_price_cents(text: str) -> Optional[int]:
     """Extract price in euro-cents from a string like '249 €' or '1.200 €'."""
     cleaned = text.replace(".", "").replace(",", ".")
@@ -107,9 +127,6 @@ def _parse_listing_card(card: Tag, base: str) -> Optional[Listing]:
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 def scrape_listings() -> list[Listing]:
-    """
-    Crawl all pages of the configured search and return raw listings.
-    """
     session = _session()
     all_listings: list[Listing] = []
     base = "https://www.kleinanzeigen.de"
@@ -134,7 +151,13 @@ def scrape_listings() -> list[Listing]:
 
         for card in cards:
             listing = _parse_listing_card(card, base)
-            if listing:
+            if listing and listing.url:
+                logger.info("Pobieram pełny opis dla: %s", listing.title)
+                full_description = _fetch_full_description(session, listing.url)
+                
+                if full_description:
+                    listing.description = full_description
+                
                 all_listings.append(listing)
 
         logger.info(

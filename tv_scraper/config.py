@@ -10,9 +10,22 @@ POSTAL_CODE = "13599"
 RADIUS_KM = 30
 PRICE_MIN = 100
 PRICE_MAX = 350
-CONDITION = "like_new"          # maps to "Sehr gut" on the site
+
+# Condition values accepted by kleinanzeigen.de (comma-separated, URL-encoded with %2C).
+# Possible values: "new", "like_new", "good", "satisfying", "not_working"
+CONDITION = "like_new%2Cnew"   # "Sehr gut" + "Neu"
+
+CATEGORY_ID = "c175"           # Fernseher category ID
+LOCATION_ID = "l3432"          # Location ID for POSTAL_CODE area
+
+# ── CATEGORY_PARAMS is built dynamically from the parameters above ─────────────
+# Format: <category_id><location_id>r<radius>+tv_video.art_s:fernseher+tv_video.condition_s:<condition>
 CATEGORY_PATH = "s-tv-video/fernseher"
-CATEGORY_PARAMS = "c175l3432r50+tv_video.art_s:fernseher+tv_video.condition_s:like_new"
+CATEGORY_PARAMS = (
+    f"{CATEGORY_ID}{LOCATION_ID}r{RADIUS_KM}"
+    f"+tv_video.art_s:fernseher"
+    f"+tv_video.condition_s:{CONDITION}"
+)
 
 # Base URL template – price is embedded in the path
 BASE_URL = (
@@ -24,12 +37,12 @@ BASE_URL = (
 # ── Filtering ──────────────────────────────────────────────────────────────────
 TV_SIZE_MIN = 55   # inches
 TV_SIZE_MAX = 65   # inches
-MAX_LISTING_AGE_DAYS = 14
+MAX_LISTING_AGE_DAYS = 1
 
 # ── Scraper Settings ──────────────────────────────────────────────────────────
 REQUEST_TIMEOUT = 15          # seconds
 REQUEST_DELAY = (1.5, 3.0)    # random delay range between requests
-MAX_PAGES = 10                # pagination cap
+MAX_PAGES = 2                # pagination cap
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
