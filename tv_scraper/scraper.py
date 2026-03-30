@@ -109,7 +109,7 @@ def _parse_listing_card(card: Tag, base: str) -> Optional[Listing]:
     # Location + date
     details_el = card.select_one("div.aditem-main--top--left")
     if details_el:
-        listing.location = details_el.get_text(" ", strip=True)
+        listing.location = " ".join(details_el.get_text(" ", strip=True).split())
 
     date_el = card.select_one("div.aditem-main--top--right")
     if date_el:

@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """
-Utilities to export Listing objects to CSV for manual or AI evaluation.
+Utilities to export Listing objects to CSV for AI evaluation.
+
+The CSV uses semicolons as delimiters (to avoid conflicts with commas in
+German text) and is written with a UTF-8 BOM so that Excel and other
+tools recognise the encoding correctly.
 
 Fields written:
   - title
   - description
   - brand (best-effort extract or 'Unknown')
   - model (best-effort extract or 'not sure')
+  - size (screen size in inches, extracted from title/description)
   - price (human readable)
   - price_cents (integer, helpful for numeric processing)
   - location
   - date
   - url
-  - image_urls (semicolon-separated if multiple)
-  - condition (if present on Listing)
+  - image_urls (pipe-separated if multiple)
 
 Usage:
   from tv_scraper.export_csv import listings_to_csv
@@ -28,6 +32,7 @@ import csv
 import re
 from typing import Iterable, List
 
+from tv_scraper.filters import extract_tv_size
 from tv_scraper.scraper import Listing  # expected to be present in your project
 
 # Small brand candidates list to help extract brand names
@@ -108,14 +113,20 @@ def _extract_model(text: str, brand: str | None = None) -> str:
 
 
 def _normalize_image_urls(value: object) -> str:
-    """Normalize image_urls attribute into a semicolon-separated string."""
+    """Normalize image_urls attribute into a pipe-separated string."""
     if not value:
         return ""
-    if isinstance(value, str):
-        return value
     if isinstance(value, (list, tuple)):
-        return ";".join(str(x) for x in value if x)
+        return "|".join(str(x) for x in value if x)
+    if isinstance(value, str):
+        # Convert legacy semicolon-separated strings to pipe-separated
+        return value.replace(";", "|")
     return str(value)
+
+
+def _clean_whitespace(text: str) -> str:
+    """Collapse any run of whitespace (including newlines) into a single space."""
+    return " ".join(text.split())
 
 
 def listings_to_csv(listings: Iterable[Listing], path: str) -> None:
@@ -130,23 +141,23 @@ def listings_to_csv(listings: Iterable[Listing], path: str) -> None:
         "description",
         "brand",
         "model",
+        "size",
         "price",
         "price_cents",
         "location",
         "date",
         "url",
         "image_urls",
-        "condition",
     ]
 
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+    with open(path, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=";")
         writer.writeheader()
 
         for item in listings:
             # Build searchable text for heuristics
-            title = getattr(item, "title", "") or ""
-            description = getattr(item, "description", "") or ""
+            title = _clean_whitespace(getattr(item, "title", "") or "")
+            description = _clean_whitespace(getattr(item, "description", "") or "")
             text = f"{title} {description}".strip()
 
             # brand and model extraction with fallbacks
@@ -155,19 +166,23 @@ def listings_to_csv(listings: Iterable[Listing], path: str) -> None:
             if not model or model.lower() in ("unknown", "none"):
                 model = "not sure"
 
+            # TV size extraction
+            size = extract_tv_size(text)
+            size_str = f'{size}"' if size else ""
+
             # prepare row
             row = {
                 "title": title,
                 "description": description,
                 "brand": brand or "Unknown",
                 "model": model,
-                "price": getattr(item, "price", "") or "",
+                "size": size_str,
+                "price": _clean_whitespace(getattr(item, "price", "") or ""),
                 "price_cents": getattr(item, "price_cents", "") or "",
-                "location": getattr(item, "location", "") or "",
-                "date": getattr(item, "date_text", "") or "",
+                "location": _clean_whitespace(getattr(item, "location", "") or ""),
+                "date": _clean_whitespace(getattr(item, "date_text", "") or ""),
                 "url": getattr(item, "url", "") or "",
                 "image_urls": _normalize_image_urls(getattr(item, "images", [])),
-                "condition": getattr(item, "condition", "") or "",
             }
             writer.writerow(row)
 
