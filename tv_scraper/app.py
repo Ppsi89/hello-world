@@ -12,6 +12,14 @@ import os
 from flask import Flask, jsonify, render_template_string, send_file
 
 from tv_scraper.cache import cache_timestamp, is_cache_fresh, load_cache, save_cache
+from tv_scraper.config import (
+    CSV_OUTPUT,
+    POSTAL_CODE,
+    PRICE_MAX,
+    PRICE_MIN,
+    TV_SIZE_MAX,
+    TV_SIZE_MIN,
+)
 from tv_scraper.export_csv import listings_to_csv
 from tv_scraper.filters import filter_listings
 from tv_scraper.scraper import scrape_listings
@@ -19,8 +27,6 @@ from tv_scraper.scraper import scrape_listings
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
-
-CSV_OUTPUT = "tv_listings.csv"
 
 # ── HTML template (single-file, mobile-friendly) ─────────────────────────────
 _HTML = """\
@@ -53,7 +59,8 @@ _HTML = """\
 <body>
   <h1>📺 TV Deal Finder</h1>
   <p style="text-align:center; font-size:.9rem; margin-bottom:16px;">
-    Searches kleinanzeigen.de for 55–65″ TV deals near 13599 Berlin.
+    Searches kleinanzeigen.de for {{ tv_size_min }}–{{ tv_size_max }}″ TV deals near {{ postal_code }}
+    (price: {{ price_min }}–{{ price_max }} €).
   </p>
   <button class="btn" id="searchBtn" onclick="doSearch()">🔍 Search Deals</button>
   <div class="spinner" id="spinner">⏳ Searching… this may take a minute.</div>
@@ -111,7 +118,14 @@ _HTML = """\
 
 @app.route("/")
 def index():
-    return render_template_string(_HTML)
+    return render_template_string(
+        _HTML,
+        tv_size_min=TV_SIZE_MIN,
+        tv_size_max=TV_SIZE_MAX,
+        postal_code=POSTAL_CODE,
+        price_min=PRICE_MIN,
+        price_max=PRICE_MAX,
+    )
 
 
 @app.route("/api/search")
